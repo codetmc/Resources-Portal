@@ -318,7 +318,7 @@
 
 <script>
   const modal = document.getElementById('uploadModal');
-  const scriptURL = 'https://script.google.com/macros/library/d/1zugvqPpVuuTxxbtQTyNG5SYOV8kcnmU82p8JJHZTDPvogcR9XvfPVHRj/4';
+  const scriptURL = 'https://script.google.com/macros/library/d/1zugvqPpVuuTxxbtQTyNG5SYOV8kcnmU82p8JJHZTDPvogcR9XvfPVHRj/6';
 
   function openModal() { modal.style.display = 'flex'; }
   function closeModal() { modal.style.display = 'none'; }
@@ -346,9 +346,9 @@
       semester: document.getElementById('semester').value,
       driveLink: document.getElementById('driveLink').value,
       contributor: document.getElementById('contributor').value,
-      fileData: null,
-      fileName: null,
-      mimeType: null
+      fileData: '',
+      fileName: '',
+      mimeType: ''
     };
 
     if (fileInput.files.length > 0) {
@@ -371,23 +371,32 @@
   function sendPayload(payload) {
     const btn = document.getElementById('submitBtn');
 
+    // Convert object to URL-encoded form data (solves CORS & Apps Script parsing)
+    const formParams = new URLSearchParams();
+    for (const key in payload) {
+      formParams.append(key, payload[key]);
+    }
+
     fetch(scriptURL, {
       method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
+      body: formParams
     })
-    .then(() => {
-      alert('Success! Your resource has been submitted to CodeTMC.');
-      document.getElementById('resourceForm').reset();
-      document.getElementById('fileName').textContent = 'No file chosen';
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'success') {
+        alert('Success! Your resource has been saved to CodeTMC Drive & Sheet.');
+        document.getElementById('resourceForm').reset();
+        document.getElementById('fileName').textContent = 'No file chosen';
+        closeModal();
+      } else {
+        alert('Server Error: ' + data.message);
+      }
       btn.disabled = false;
       btn.innerText = '✈️ Submit for Review';
-      closeModal();
     })
     .catch(err => {
       console.error(err);
-      alert('Upload failed. Please check your network connection.');
+      alert('Network/Upload error. Please try again.');
       btn.disabled = false;
       btn.innerText = '✈️ Submit for Review';
     });
