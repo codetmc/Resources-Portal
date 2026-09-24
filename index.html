@@ -248,6 +248,9 @@
 </head>
 <body>
 
+<!-- Hidden iframe to process cross-domain uploads without CORS block -->
+<iframe name="upload_target" id="upload_target" style="display:none;"></iframe>
+
 <div class="contribute-card">
   <div class="tag-subtitle">Contribute</div>
   <h2>Share your notes, labs & projects</h2>
@@ -270,20 +273,25 @@
       <button class="close-btn" onclick="closeModal()">&times;</button>
     </div>
 
-    <form id="resourceForm">
+    <!-- Target hidden_iframe for direct POST submission -->
+    <form id="resourceForm" 
+          action="https://script.google.com/macros/s/AKfycbwCyXH5rgcM4_hHpKwa-XO2dCWPJ16aIyGl5NjPMj1nEP9FLI8xArXm_rsFUWGEU_aW/exec" 
+          method="POST" 
+          target="upload_target">
+      
       <div class="form-group">
         <label for="title">Title *</label>
-        <input type="text" id="title" placeholder="e.g. Digital Logic Lab Report Set" required>
+        <input type="text" id="title" name="title" placeholder="e.g. Digital Logic Lab Report Set" required>
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label for="subject">Subject *</label>
-          <input type="text" id="subject" placeholder="C Programming" required>
+          <input type="text" id="subject" name="subject" placeholder="C Programming" required>
         </div>
         <div class="form-group">
           <label for="semester">Semester *</label>
-          <select id="semester" required>
+          <select id="semester" name="semester" required>
             <option value="Semester 1">Semester 1</option>
             <option value="Semester 2">Semester 2</option>
             <option value="Semester 3">Semester 3</option>
@@ -301,14 +309,19 @@
         </div>
       </div>
 
+      <!-- Hidden payload fields -->
+      <input type="hidden" id="fileData" name="fileData">
+      <input type="hidden" id="fileNameInput" name="fileName">
+      <input type="hidden" id="mimeType" name="mimeType">
+
       <div class="form-group">
         <label for="driveLink">OR Drive / GitHub Link</label>
-        <input type="url" id="driveLink" placeholder="https://">
+        <input type="url" id="driveLink" name="driveLink" placeholder="https://">
       </div>
 
       <div class="form-group">
         <label for="contributor">Your name / contact *</label>
-        <input type="text" id="contributor" placeholder="Name or Telegram handle" required>
+        <input type="text" id="contributor" name="contributor" placeholder="Name or Telegram handle" required>
       </div>
 
       <button type="submit" class="btn-submit" id="submitBtn">✈️ Submit for Review</button>
@@ -318,7 +331,8 @@
 
 <script>
   const modal = document.getElementById('uploadModal');
-  const scriptURL = 'https://script.google.com/macros/library/d/1zugvqPpVuuTxxbtQTyNG5SYOV8kcnmU82p8JJHZTDPvogcR9XvfPVHRj/6';
+  const form = document.getElementById('resourceForm');
+  const btn = document.getElementById('submitBtn');
 
   function openModal() { modal.style.display = 'flex'; }
   function closeModal() { modal.style.display = 'none'; }
@@ -332,75 +346,48 @@
     }
   }
 
-  document.getElementById('resourceForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const btn = document.getElementById('submitBtn');
+  form.addEventListener('submit', function(e) {
+    e.preventDefault(); // Pause to encode file to Base64
     const fileInput = document.getElementById('fileInput');
 
     btn.disabled = true;
     btn.innerText = 'Uploading...';
-
-    const payload = {
-      title: document.getElementById('title').value,
-      subject: document.getElementById('subject').value,
-      semester: document.getElementById('semester').value,
-      driveLink: document.getElementById('driveLink').value,
-      contributor: document.getElementById('contributor').value,
-      fileData: '',
-      fileName: '',
-      mimeType: ''
-    };
 
     if (fileInput.files.length > 0) {
       const file = fileInput.files[0];
       const reader = new FileReader();
 
       reader.onload = function(evt) {
-        payload.fileData = evt.target.result.split(',')[1];
-        payload.fileName = file.name;
-        payload.mimeType = file.type;
-        sendPayload(payload);
+        document.getElementById('fileData').value = evt.target.result.split(',')[1];
+        document.getElementById('fileNameInput').value = file.name;
+        document.getElementById('mimeType').value = file.type;
+        form.submit(); // Submit form via target iframe
       };
 
       reader.readAsDataURL(file);
     } else {
-      sendPayload(payload);
+      document.getElementById('fileData').value = '';
+      document.getElementById('fileNameInput').value = '';
+      document.getElementById('mimeType').value = '';
+      form.submit();
     }
   });
 
-  function sendPayload(payload) {
-    const btn = document.getElementById('submitBtn');
-
-    // Convert object to URL-encoded form data (solves CORS & Apps Script parsing)
-    const formParams = new URLSearchParams();
-    for (const key in payload) {
-      formParams.append(key, payload[key]);
+  // Receive response event message from iframe
+  window.addEventListener('message', function(event) {
+    if (event.data === 'SUCCESS') {
+      alert('Success! Your resource has been saved to CodeTMC Drive & Sheet.');
+      form.reset();
+      document.getElementById('fileName').textContent = 'No file chosen';
+      btn.disabled = false;
+      btn.innerText = '✈️ Submit for Review';
+      closeModal();
+    } else if (typeof event.data === 'string' && event.data.startsWith('ERROR:')) {
+      alert(event.data);
+      btn.disabled = false;
+      btn.innerText = '✈️ Submit for Review';
     }
-
-    fetch(scriptURL, {
-      method: 'POST',
-      body: formParams
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.status === 'success') {
-        alert('Success! Your resource has been saved to CodeTMC Drive & Sheet.');
-        document.getElementById('resourceForm').reset();
-        document.getElementById('fileName').textContent = 'No file chosen';
-        closeModal();
-      } else {
-        alert('Server Error: ' + data.message);
-      }
-      btn.disabled = false;
-      btn.innerText = '✈️ Submit for Review';
-    })
-    .catch(err => {
-      console.error(err);
-      alert('Network/Upload error. Please try again.');
-      btn.disabled = false;
-      btn.innerText = '✈️ Submit for Review';
-    });
-  }
+  });
 </script>
 
 </body>
