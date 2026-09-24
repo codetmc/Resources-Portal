@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CodeTMC - Resource Portal</title>
+<title>CodeTMC - Resource Upload Portal</title>
 <style>
   :root {
     --primary: #0066cc;
@@ -27,7 +27,7 @@
     padding: 20px;
   }
 
-  /* Contribution Banner Card */
+  /* Contribution Callout Banner */
   .contribute-card {
     background: #ffffff;
     border-radius: 24px;
@@ -120,7 +120,7 @@
 
   .btn-trigger:hover { transform: translateY(-2px); opacity: 0.95; }
 
-  /* Modal Overlay */
+  /* Popup Modal Overlay */
   .modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -197,7 +197,7 @@
     background: #ffffff;
   }
 
-  /* File Drop Box */
+  /* File Selection Zone */
   .file-drop-zone {
     border: 2px dashed #cbd5e1;
     border-radius: 12px;
@@ -251,7 +251,10 @@
 </head>
 <body>
 
-<!-- Main Contribution Card -->
+<!-- Hidden iframe for CORS-free submission -->
+<iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+
+<!-- Main Banner Card -->
 <div class="contribute-card">
   <div class="tag-subtitle">Contribute</div>
   <h2>Share your notes, labs & projects</h2>
@@ -267,7 +270,7 @@
   <button class="btn-trigger" onclick="openModal()">📤 Submit a Resource</button>
 </div>
 
-<!-- Modal Dialog -->
+<!-- Upload Modal -->
 <div class="modal-overlay" id="uploadModal">
   <div class="modal-card">
     <div class="modal-header">
@@ -275,76 +278,12 @@
       <button class="close-btn" onclick="closeModal()">&times;</button>
     </div>
 
-    <form id="resourceForm">
-      <div class="form-group">
-        <label for="title">Title</label>
-        <input type="text" id="title" placeholder="e.g. Digital Logic Lab Report Set" required>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="subject">Subject</label>
-          <input type="text" id="subject" placeholder="C Programming" required>
-        </div>
-        <div class="form-group">
-          <label for="semester">Semester</label>
-          <select id="semester" required>
-            <option value="Semester 1">Semester 1</option>
-            <option value="Semester 2">Semester 2</option>
-            <option value="Semester 3">Semester 3</option>
-            <option value="Semester 4">Semester 4</option>
-            <option value="Semester 5">Semester 5</option>
-            <option value="Semester 6">Semester 6</option>
-            <option value="Semester 7">Semester 7</option>
-            <option value="Semester 8">Semester 8</option>
-            <option value="Other">Other</option>
-            
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Upload File (PDF / ZIP from Phone or Laptop)</label>
-        <div class="file-drop-zone" onclick="document.getElementById('fileInput').click()">
-          <span class="file-label">📁 Click to select file</span>
-          <div class="file-name-display" id="fileName">No file chosen</div>
-          <input type="file" id="fileInput" accept=".pdf,.zip,.rar" onchange="updateFileName(this)">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="driveLink">OR Drive / GitHub Link</label>
-        <input type="url" id="driveLink" placeholder="https://">
-      </div>
-
-      <div class="form-group">
-        <label for="contributor">Your name / contact</label>
-        <input type="text" id="contributor" placeholder="Name or Telegram handle" required>
-      </div>
-
-      <button type="submit" class="btn-submit" id="submitBtn">✈️ Submit for Review</button>
-    </form>
-  </div>
-</div>
-
-<!-- Hidden iframe to capture form submission response silently -->
-<iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="if(submitted) { handleSuccess(); }"></iframe>
-
-<!-- Modal Form -->
-<div class="modal-overlay" id="uploadModal">
-  <div class="modal-card">
-    <div class="modal-header">
-      <h3>Submit Resource</h3>
-      <button class="close-btn" onclick="closeModal()">&times;</button>
-    </div>
-
-    <!-- Direct FORM POST targeting hidden iframe -->
+    <!-- Direct Form Target to Hidden Frame -->
     <form id="resourceForm" 
           action="https://script.google.com/macros/s/AKfycbwCyXH5rgcM4_hHpKwa-XO2dCWPJ16aIyGl5NjPMj1nEP9FLI8xArXm_rsFUWGEU_aW/exec" 
           method="POST" 
           enctype="multipart/form-data" 
-          target="hidden_iframe" 
-          onsubmit="submitted=true;">
+          target="hidden_iframe">
       
       <div class="form-group">
         <label for="title">Title *</label>
@@ -363,11 +302,6 @@
             <option value="Semester 2">Semester 2</option>
             <option value="Semester 3">Semester 3</option>
             <option value="Semester 4">Semester 4</option>
-             <option value="Semester 5">Semester 5</option>
-              <option value="Semester 6">Semester 6</option>
-               <option value="Semester 7">Semester 7</option>
-                <option value="Semester 8">Semester 8</option>
-                 <option value="Other">Other</option>
           </select>
         </div>
       </div>
@@ -397,8 +331,9 @@
 </div>
 
 <script>
-  let submitted = false;
   const modal = document.getElementById('uploadModal');
+  const form = document.getElementById('resourceForm');
+  const btn = document.getElementById('submitBtn');
 
   function openModal() { modal.style.display = 'flex'; }
   function closeModal() { modal.style.display = 'none'; }
@@ -412,25 +347,27 @@
     }
   }
 
-  // Triggered automatically after iframe receives success response
-  function handleSuccess() {
-    alert('Success! Your resource has been uploaded to CodeTMC Drive.');
-    document.getElementById('resourceForm').reset();
-    document.getElementById('fileName').textContent = 'No file chosen';
-    
-    const btn = document.getElementById('submitBtn');
-    btn.disabled = false;
-    btn.innerText = '✈️ Submit for Review';
-    
-    submitted = false;
-    closeModal();
-  }
-
-  document.getElementById('resourceForm').addEventListener('submit', function() {
-    const btn = document.getElementById('submitBtn');
+  form.addEventListener('submit', function() {
     btn.disabled = true;
     btn.innerText = 'Uploading...';
   });
+
+  // Callbacks invoked directly by the script inside the iframe response
+  window.handleSuccess = function() {
+    alert('Thank you! Your resource has been uploaded to CodeTMC Drive.');
+    form.reset();
+    document.getElementById('fileName').textContent = 'No file chosen';
+    btn.disabled = false;
+    btn.innerText = '✈️ Submit for Review';
+    closeModal();
+  };
+
+  window.handleError = function(errMsg) {
+    alert('Upload error: ' + errMsg);
+    btn.disabled = false;
+    btn.innerText = '✈️ Submit for Review';
+  };
 </script>
+
 </body>
 </html>
