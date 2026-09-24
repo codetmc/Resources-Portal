@@ -333,6 +333,8 @@
   const modal = document.getElementById('uploadModal');
   const form = document.getElementById('resourceForm');
   const btn = document.getElementById('submitBtn');
+  const iframe = document.getElementById('upload_target');
+  let isSubmitting = false;
 
   function openModal() { modal.style.display = 'flex'; }
   function closeModal() { modal.style.display = 'none'; }
@@ -346,10 +348,12 @@
     }
   }
 
+  // Handle Form Submission & Base64 Conversion
   form.addEventListener('submit', function(e) {
-    e.preventDefault(); // Pause to encode file to Base64
+    e.preventDefault();
     const fileInput = document.getElementById('fileInput');
 
+    isSubmitting = true;
     btn.disabled = true;
     btn.innerText = 'Uploading...';
 
@@ -361,7 +365,7 @@
         document.getElementById('fileData').value = evt.target.result.split(',')[1];
         document.getElementById('fileNameInput').value = file.name;
         document.getElementById('mimeType').value = file.type;
-        form.submit(); // Submit form via target iframe
+        form.submit(); // Submit form targeting the hidden iframe
       };
 
       reader.readAsDataURL(file);
@@ -373,22 +377,20 @@
     }
   });
 
-  // Receive response event message from iframe
-  window.addEventListener('message', function(event) {
-    if (event.data === 'SUCCESS') {
-      alert('Success! Your resource has been saved to CodeTMC Drive & Sheet.');
+  // Listen directly to iframe completion to trigger UI reset
+  iframe.onload = function() {
+    if (isSubmitting) {
+      isSubmitting = false;
+      alert('Success! Your resource has been uploaded to CodeTMC Drive & Sheet.');
+      
       form.reset();
       document.getElementById('fileName').textContent = 'No file chosen';
+      
       btn.disabled = false;
       btn.innerText = '✈️ Submit for Review';
       closeModal();
-    } else if (typeof event.data === 'string' && event.data.startsWith('ERROR:')) {
-      alert(event.data);
-      btn.disabled = false;
-      btn.innerText = '✈️ Submit for Review';
     }
-  });
+  };
 </script>
-
 </body>
 </html>
