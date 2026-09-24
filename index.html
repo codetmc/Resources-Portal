@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeTMC - Resource Portal</title>
+<style>
+  :root {
+    --primary: #0066cc;
+    --secondary: #ff8c00;
+    --dark: #0f172a;
+    --slate: #64748b;
+    --border: #e2e8f0;
+    --bg-light: #f8fafc;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-light);
+    color: var(--dark);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  /* Contribution Banner Card */
+  .contribute-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 40px;
+    max-width: 850px;
+    width: 100%;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .contribute-card::after {
+    content: "";
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, rgba(255,140,0,0.25) 0%, rgba(255,255,255,0) 70%);
+    pointer-events: none;
+  }
+
+  .tag-subtitle {
+    color: var(--primary);
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 12px;
+  }
+
+  .contribute-card h2 {
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    margin-bottom: 12px;
+  }
+
+  .contribute-card p {
+    color: var(--slate);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    max-width: 620px;
+  }
+
+  .check-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 28px;
+    font-size: 0.9rem;
+    color: var(--slate);
+  }
+
+  .check-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .check-list li::before {
+    content: "✓";
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #dcfce7;
+    color: #15803d;
+    font-size: 11px;
+    font-weight: bold;
+  }
+
+  .btn-trigger {
+    background: linear-gradient(135deg, #ff8c00 0%, #ff5500 100%);
+    color: #ffffff;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(255, 140, 0, 0.3);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+
+  .btn-trigger:hover { transform: translateY(-2px); opacity: 0.95; }
+
+  /* Modal Overlay */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(4px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 16px;
+  }
+
+  .modal-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 32px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    position: relative;
+    animation: popIn 0.25s ease forwards;
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .modal-header h3 { font-size: 1.35rem; font-weight: 800; }
+
+  .close-btn {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: var(--slate);
+    cursor: pointer;
+  }
+
+  .form-group { margin-bottom: 16px; }
+
+  .form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--slate);
+    margin-bottom: 6px;
+  }
+
+  .form-row { display: flex; gap: 12px; }
+  .form-row .form-group { flex: 1; }
+
+  input[type="text"],
+  input[type="url"],
+  select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-light);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--primary);
+    background: #ffffff;
+  }
+
+  /* File Drop Box */
+  .file-drop-zone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    background: var(--bg-light);
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .file-drop-zone:hover {
+    border-color: var(--primary);
+    background: #eff6ff;
+  }
+
+  .file-drop-zone input[type="file"] { display: none; }
+
+  .file-label {
+    font-size: 0.88rem;
+    color: var(--slate);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .file-name-display {
+    font-size: 0.82rem;
+    color: var(--primary);
+    font-weight: 700;
+    margin-top: 6px;
+  }
+
+  .btn-submit {
+    width: 100%;
+    background: linear-gradient(180deg, #0077dd 0%, #004499 100%);
+    color: #ffffff;
+    border: none;
+    padding: 14px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    margin-top: 10px;
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+  }
+
+  @media (max-width: 640px) {
+    .contribute-card { padding: 24px; }
+    .form-row { flex-direction: column; gap: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Main Contribution Card -->
+<div class="contribute-card">
+  <div class="tag-subtitle">Contribute</div>
+  <h2>Share your notes, labs & projects</h2>
+  <p>Every lab report and note you upload helps the next batch at Tribhuvan Multiple Campus. Submit clean PDFs or ZIPs — we review and publish to the public archive.</p>
+
+  <ul class="check-list">
+    <li>Lab reports (DL, OOP, Physics, C...)</li>
+    <li>Handwritten or typed chapter notes</li>
+    <li>Unit-wise IMP / model questions</li>
+    <li>Open-source mini projects</li>
+  </ul>
+
+  <button class="btn-trigger" onclick="openModal()">📤 Submit a Resource</button>
+</div>
+
+<!-- Modal Dialog -->
+<div class="modal-overlay" id="uploadModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Submit Resource</h3>
+      <button class="close-btn" onclick="closeModal()">&times;</button>
+    </div>
+
+    <form id="resourceForm">
+      <div class="form-group">
+        <label for="title">Title</label>
+        <input type="text" id="title" placeholder="e.g. Digital Logic Lab Report Set" required>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="subject">Subject</label>
+          <input type="text" id="subject" placeholder="C Programming" required>
+        </div>
+        <div class="form-group">
+          <label for="semester">Semester</label>
+          <select id="semester" required>
+            <option value="Semester 1">Semester 1</option>
+            <option value="Semester 2">Semester 2</option>
+            <option value="Semester 3">Semester 3</option>
+            <option value="Semester 4">Semester 4</option>
+            <option value="Semester 5">Semester 5</option>
+            <option value="Semester 6">Semester 6</option>
+            <option value="Semester 7">Semester 7</option>
+            <option value="Semester 8">Semester 8</option>
+            <option value="Other">Other</option>
+            
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Upload File (PDF / ZIP from Phone or Laptop)</label>
+        <div class="file-drop-zone" onclick="document.getElementById('fileInput').click()">
+          <span class="file-label">📁 Click to select file</span>
+          <div class="file-name-display" id="fileName">No file chosen</div>
+          <input type="file" id="fileInput" accept=".pdf,.zip,.rar" onchange="updateFileName(this)">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="driveLink">OR Drive / GitHub Link</label>
+        <input type="url" id="driveLink" placeholder="https://">
+      </div>
+
+      <div class="form-group">
+        <label for="contributor">Your name / contact</label>
+        <input type="text" id="contributor" placeholder="Name or Telegram handle" required>
+      </div>
+
+      <button type="submit" class="btn-submit" id="submitBtn">✈️ Submit for Review</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const modal = document.getElementById('uploadModal');
+  const scriptURL = 'https://script.google.com/macros/s/AKfycbwCyXH5rgcM4_hHpKwa-XO2dCWPJ16aIyGl5NjPMj1nEP9FLI8xArXm_rsFUWGEU_aW/exec'; 
+  function openModal() { modal.style.display = 'flex'; }
+  function closeModal() { modal.style.display = 'none'; }
+
+  function updateFileName(input) {
+    const display = document.getElementById('fileName');
+    if (input.files && input.files[0]) {
+      display.textContent = input.files[0].name;
+    } else {
+      display.textContent = 'No file chosen';
+    }
+  }
+
+  document.getElementById('resourceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const fileInput = document.getElementById('fileInput');
+    
+    btn.disabled = true;
+    btn.innerText = 'Uploading...';
+
+    const payload = {
+      title: document.getElementById('title').value,
+      subject: document.getElementById('subject').value,
+      semester: document.getElementById('semester').value,
+      driveLink: document.getElementById('driveLink').value,
+      contributor: document.getElementById('contributor').value,
+      fileData: null,
+      fileName: null,
+      mimeType: null
+    };
+
+    if (fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(evt) {
+        // Extract raw base64 string
+        payload.fileData = evt.target.result.split(',')[1];
+        payload.fileName = file.name;
+        payload.mimeType = file.type;
+        sendPayload(payload);
+      };
+
+      reader.readAsDataURL(file);
+    } else {
+      sendPayload(payload);
+    }
+  });
+
+  function sendPayload(payload) {
+    const btn = document.getElementById('submitBtn');
+
+    fetch(scriptURL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      alert('Thank you! Your resource has been uploaded for review.');
+      document.getElementById('resourceForm').reset();
+      document.getElementById('fileName').textContent = 'No file chosen';
+      btn.disabled = false;
+      btn.innerText = '✈️ Submit for Review';
+      closeModal();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Upload failed. Please check your network connection.');
+      btn.disabled = false;
+      btn.innerText = '✈️ Submit for Review';
+    });
+  }
+</script>
+
+</body>
+</html>
